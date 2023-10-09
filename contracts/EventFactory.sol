@@ -24,7 +24,8 @@ interface ILiveTipping {
         uint eventId,
         address creator,
         uint startTime,
-        uint baseTip
+        uint baseTip,
+        uint curatorCut
     ) external;
 
     function endEvent(uint eventId, address curator) external returns (address);
@@ -117,9 +118,11 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
         uint baseTip,
         uint maxTickets,
         uint ticketPrice,
+        uint curatorCut,
         string memory metadata
     ) public {
         require(startTime > block.timestamp, "Invalid start time");
+        require(curatorCut <= 90, "Curator cut must be less than 90%");
         uint eventId = eventIdCounter++;
         events[eventId] = Event(
             msg.sender,
@@ -139,7 +142,8 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
             eventId,
             msg.sender,
             startTime,
-            baseTip
+            baseTip,
+            curatorCut
         );
         _setTokenURI(eventId, metadata);
         emit EventCreated(eventId, msg.sender, startTime, metadata);

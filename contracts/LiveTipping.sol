@@ -7,7 +7,8 @@ interface IDistributor {
     function distributeFunds(
         uint eventId,
         address creator,
-        address curator
+        address curator,
+        uint curatorCut
     ) external payable;
 }
 
@@ -22,6 +23,7 @@ contract LiveTipping is Ownable {
         uint baseTip;
         uint highestTip;
         uint totalTips;
+        uint curatorCut;
         bool isEventOver;
     }
 
@@ -31,7 +33,8 @@ contract LiveTipping is Ownable {
     event LiveTippingCreated(
         uint indexed eventId,
         uint startTime,
-        uint baseTip
+        uint baseTip,
+        uint curatorCut
     );
     event Tipped(
         uint indexed eventId,
@@ -60,7 +63,8 @@ contract LiveTipping is Ownable {
         uint eventId,
         address creator,
         uint startTime,
-        uint baseTip
+        uint baseTip,
+        uint curatorCut
     ) public onlyEventFactory {
         events[eventId] = Event(
             creator,
@@ -69,9 +73,10 @@ contract LiveTipping is Ownable {
             baseTip,
             0,
             0,
+            curatorCut,
             false
         );
-        emit LiveTippingCreated(eventId, startTime, baseTip);
+        emit LiveTippingCreated(eventId, startTime, baseTip, curatorCut);
     }
 
     function tipEvent(uint eventId) public payable {
@@ -101,7 +106,8 @@ contract LiveTipping is Ownable {
         distributorContract.distributeFunds{value: events[eventId].totalTips}(
             eventId,
             events[eventId].creator,
-            curator
+            curator,
+            events[eventId].curatorCut
         );
 
         return events[eventId].highestTipper;

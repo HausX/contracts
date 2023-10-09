@@ -34,14 +34,16 @@ contract Distributor is Ownable {
     function distributeFunds(
         uint eventId,
         address creator,
-        address curator
+        address curator,
+        uint curatorCut
     ) public payable onlyLiveTipping {
         require(!isEventOver[eventId], "Event is already over");
+
         isEventOver[eventId] = true;
 
-        uint creatorAmount = (msg.value * 80) / 100;
-        uint curatorAmount = (msg.value * 5) / 100;
-        uint daoAmount = (msg.value * 15) / 100;
+        uint creatorAmount = (msg.value * (90 - curatorCut)) / 100;
+        uint curatorAmount = (msg.value * curatorCut) / 100;
+        uint daoAmount = (msg.value * 10) / 100;
         (bool success1, ) = creator.call{value: creatorAmount}("");
         (bool success2, ) = curator.call{value: curatorAmount}("");
         (bool success3, ) = dao.call{value: daoAmount}("");
