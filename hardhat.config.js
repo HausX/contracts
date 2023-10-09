@@ -3,6 +3,7 @@ require("hardhat-contract-sizer");
 require("@openzeppelin/hardhat-upgrades");
 require("./tasks");
 require("dotenv").config();
+require("@starboardventures/hardhat-verify");
 const { networks } = require("./networks");
 
 // Enable gas reporting (optional)
@@ -22,8 +23,14 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.8.19",
-        settings: SOLC_SETTINGS,
+        version: "0.8.17",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+            details: { yul: false },
+          },
+        },
       },
       {
         version: "0.8.10",
@@ -94,6 +101,10 @@ module.exports = {
     tests: "./test",
     cache: "./build/cache",
     artifacts: "./build/artifacts",
+  },
+  starboardConfig: {
+    baseURL: "https://fvm-calibration-api.starboard.ventures",
+    network: "Calibration", // if there's no baseURL, url will depend on the network.  Mainnet || Calibration
   },
   mocha: {
     timeout: 200000, // 200 seconds max for running tests

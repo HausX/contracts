@@ -21,6 +21,14 @@ const networks = {
     nativeCurrencySymbol: "ETH",
     WAIT_BLOCK_CONFIRMATIONS: 3,
   },
+  calibrationTestnet: {
+    chainId: 314159,
+    gasPrice: undefined,
+    url: "https://api.calibration.node.glif.io/rpc/v1",
+    WAIT_BLOCK_CONFIRMATIONS: 5,
+    nativeCurrencySymbol: "FIL",
+    accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+  },
 };
 
 module.exports = {

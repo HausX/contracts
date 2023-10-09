@@ -5,6 +5,11 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import {AxelarExecutable} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import {IAxelarGateway} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGateway.sol";
+import {IAxelarGasService} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
+import {IERC20} from "@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IERC20.sol";
+
 interface ITicketFactory {
     function createTicket(
         uint256 eventId,
@@ -25,9 +30,11 @@ interface ILiveTipping {
     function endEvent(uint eventId, address curator) external returns (address);
 }
 
-contract EventFactory is ERC721, ERC721URIStorage, Ownable {
+contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
     ILiveTipping public immutable i_liveTippingContract;
     ITicketFactory public immutable i_ticketFactory;
+    IAxelarGasService public immutable gasService;
+    string public i_streamStorageContract;
     uint256 public eventIdCounter;
 
     struct Event {
@@ -35,6 +42,7 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable {
         uint startTime;
         address owner;
         string metadata;
+        string pieceCid;
         string streamURI;
     }
 
@@ -42,10 +50,15 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable {
 
     constructor(
         ILiveTipping liveTippingContract,
-        ITicketFactory ticketFactoryContract
-    ) ERC721("RealityHaus", "RH") {
+        ITicketFactory ticketFactoryContract,
+        string memory streamStorageContract,
+        address gateway_,
+        address gasReceiver_
+    ) AxelarExecutable(gateway_) ERC721("RealityHaus", "RH") {
         i_liveTippingContract = liveTippingContract;
         i_ticketFactory = ticketFactoryContract;
+        i_streamStorageContract = streamStorageContract;
+        gasService = IAxelarGasService(gasReceiver_);
     }
 
     event EventCreated(
@@ -54,9 +67,39 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable {
         uint startTime,
         string metadata
     );
-    event EventEnded(uint indexed eventId, string streamURI, address owner);
+    event EventEnded(
+        uint indexed eventId,
+        string pieceCid,
+        string streamURI,
+        address owner
+    );
 
-    function _endEvent(uint eventId, string memory streamURI) internal {
+    function _execute(
+        string calldata sourceChain_,
+        string calldata sourceAddress_,
+        bytes calldata payload_
+    ) internal override {
+        require(
+            keccak256(bytes(sourceChain_)) == keccak256(bytes("filecoin-2")),
+            "invalid chain"
+        );
+        require(
+            keccak256(bytes(sourceAddress_)) ==
+                keccak256(bytes(i_streamStorageContract)),
+            "invalid address"
+        );
+
+        (uint256 eventId, string memory pieceCid, string memory uri) = abi
+            .decode(payload_, (uint256, string, string));
+
+        _endEvent(eventId, pieceCid, uri);
+    }
+
+    function _endEvent(
+        uint eventId,
+        string memory pieceCid,
+        string memory streamURI
+    ) internal {
         // gets triggered on receiving cross-chain transaction from FVM on successful storage of stream chunks
         address highestTipper = i_liveTippingContract.endEvent(
             eventId,
@@ -64,8 +107,9 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable {
         );
         events[eventId].streamURI = streamURI;
         events[eventId].owner = highestTipper;
+        events[eventId].pieceCid = pieceCid;
         _mint(highestTipper, eventId);
-        emit EventEnded(eventId, streamURI, highestTipper);
+        emit EventEnded(eventId, pieceCid, streamURI, highestTipper);
     }
 
     function createEvent(
@@ -82,6 +126,7 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable {
             startTime,
             address(0),
             metadata,
+            "",
             ""
         );
         i_ticketFactory.createTicket(
