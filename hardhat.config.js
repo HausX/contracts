@@ -13,7 +13,7 @@ const REPORT_GAS =
 const SOLC_SETTINGS = {
   optimizer: {
     enabled: true,
-    runs: 1_000,
+    runs: 1000,
   },
 };
 
@@ -27,7 +27,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000,
+            runs: 15,
             details: { yul: false },
           },
         },

@@ -1,27 +1,27 @@
 const { networks } = require("../../networks");
 
-task("deploy-ticket-factory", "Deploys TicketFactory contract").setAction(
+task("deploy-live-tipping", "Deploys LiveTipping contract").setAction(
   async (taskArgs, hre) => {
-    console.log(`Deploying TicketFactory contract to ${network.name}`);
+    console.log(`Deploying LiveTipping contract to ${network.name}`);
 
     if (network.name === "hardhat") {
       throw Error(
         'This command cannot be used on a local development chain.  Specify a valid network or simulate an Functions request locally with "npx hardhat functions-simulate".'
       );
     }
-    const ticketFactory = await ethers.getContractFactory("TicketFactory");
-    const ticketContract = await ticketFactory.deploy();
+    const liveTipping = await ethers.getContractFactory("LiveTipping");
+    const liveTippingContract = await liveTipping.deploy();
     console.log(
-      `\nWaiting 3 blocks for transaction ${ticketContract.deployTransaction.hash} to be confirmed...`
+      `\nWaiting 3 blocks for transaction ${liveTippingContract.deployTransaction.hash} to be confirmed...`
     );
 
-    await ticketContract.deployTransaction.wait(
+    await liveTippingContract.deployTransaction.wait(
       networks[network.name].WAIT_BLOCK_CONFIRMATIONS
     );
     console.log("\nVerifying contract...");
     try {
       await run("verify:verify", {
-        address: ticketContract.address,
+        address: liveTippingContract.address,
         constructorArguments: [],
       });
       console.log("Contract verified");
@@ -36,7 +36,7 @@ task("deploy-ticket-factory", "Deploys TicketFactory contract").setAction(
       }
     }
     console.log(
-      `TicketFactory deployed to ${ticketContract.address} on ${network.name}`
+      `LiveTipping deployed to ${liveTippingContract.address} on ${network.name}`
     );
   }
 );
