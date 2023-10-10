@@ -19,6 +19,7 @@ contract Distributor is Ownable {
     );
 
     modifier onlyLiveTipping() {
+        require(liveTippingContract!=address(0)&&dao!=address(0),"not initialized");
         require(msg.sender == liveTippingContract, "Invalid Caller");
         _;
     }

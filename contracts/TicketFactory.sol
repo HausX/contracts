@@ -39,6 +39,7 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
     );
 
     modifier onlyEventFactory() {
+        require(eventFactory != address(0), "Not initialized"); 
         require(msg.sender == eventFactory, "Invalid Caller");
         _;
     }

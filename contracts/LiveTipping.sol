@@ -44,6 +44,7 @@ contract LiveTipping is Ownable {
     );
 
     modifier onlyEventFactory() {
+        require(eventFactoryContract != address(0), "not initialized");
         require(
             msg.sender == eventFactoryContract,
             "Only the event factory can call this function"
@@ -102,6 +103,7 @@ contract LiveTipping is Ownable {
         onlyEventFactory
         returns (address)
     {
+        require(address(distributorContract) != address(0), "not initialized!");
         events[eventId].isEventOver = true;
         distributorContract.distributeFunds{value: events[eventId].totalTips}(
             eventId,

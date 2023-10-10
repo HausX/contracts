@@ -167,7 +167,7 @@ contract DealClient is AxelarExecutable {
         returns (bytes32)
     {
         require(msg.sender == owner);
-
+        require(destinationAddress != address(0), "not initialized");
         if (
             pieceStatus[deal.piece_cid] == Status.DealPublished ||
             pieceStatus[deal.piece_cid] == Status.DealActivated
