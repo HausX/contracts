@@ -1,6 +1,7 @@
 const { networks } = require("../networks");
-task("create-event", "Creates Event in the Event Factory").setAction(
-  async (taskArgs, hre) => {
+task("create-event", "Creates Event in the Event Factory")
+  .addParam("contract", "Address of EventFactory")
+  .setAction(async (taskArgs, hre) => {
     if (network.name === "hardhat") {
       throw Error(
         'This command cannot be used on a local development chain.  Specify a valid network or simulate an Functions request locally with "npx hardhat functions-simulate".'
@@ -16,15 +17,15 @@ task("create-event", "Creates Event in the Event Factory").setAction(
         "EventFactory",
         wallet
       );
-      const eventFactory = await EventFactory.attach(
-        "0xeD7B819cde5C9aE1BC529268e9aebb370bc5B84a"
-      );
+      const eventFactory = await EventFactory.attach(taskArgs.contract);
 
       const transaction = await eventFactory.createEvent(
-        "1697011735",
+        "1697014500",
         "100000000000000",
         "35",
-        "100000000000000"
+        "100000000000000",
+        "10",
+        "Sample metadata"
       );
       transactionReceipt = await transaction.wait();
 
@@ -33,5 +34,4 @@ task("create-event", "Creates Event in the Event Factory").setAction(
       console.log("ERror");
       console.log(error);
     }
-  }
-);
+  });

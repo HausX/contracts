@@ -109,7 +109,7 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
         events[eventId].streamURI = streamURI;
         events[eventId].owner = highestTipper;
         events[eventId].pieceCid = pieceCid;
-        _mint(highestTipper, eventId);
+        transferFrom(address(this),highestTipper, eventId);
         emit EventEnded(eventId, pieceCid, streamURI, highestTipper);
     }
 
@@ -145,6 +145,7 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
             baseTip,
             curatorCut
         );
+        _mint(address(this), eventId);
         _setTokenURI(eventId, metadata);
         emit EventCreated(eventId, msg.sender, startTime, metadata);
     }
