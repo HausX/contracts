@@ -1,8 +1,6 @@
 const { networks } = require("../../networks");
-task("init-stream-storage", "Initializes Stream Storage")
-  .addParam("contract", "Address of StreamStorage")
-  .addParam("eventfactory", "Address of EventFactory")
-  .setAction(async (taskArgs, hre) => {
+task("init-stream-storage", "Initializes Stream Storage").setAction(
+  async (taskArgs, hre) => {
     if (network.name === "hardhat") {
       throw Error(
         'This command cannot be used on a local development chain.  Specify a valid network or simulate an Functions request locally with "npx hardhat functions-simulate".'
@@ -10,24 +8,27 @@ task("init-stream-storage", "Initializes Stream Storage")
     }
 
     try {
-      const functionHash = ethers.utils.id("initialize(address)");
-      console.log(functionHash.slice(0, 10));
-      const data =
-        functionHash.slice(0, 10) +
-        ethers.utils.defaultAbiCoder
-          .encode(["address"], [taskArgs.eventfactory])
-          .slice(2);
+      const wallet = new ethers.Wallet(
+        network.config.accounts[0],
+        ethers.provider
+      );
+      const StreamStorage = await ethers.getContractFactory(
+        "StreamStorage",
+        wallet
+      );
+      const streamStorage = await StreamStorage.attach(
+        "0xbe2914199fa40bc4a66e8a69d77ad778a84fab2f"
+      );
 
-      const initializeTx = await ethers.provider.sendTransaction({
-        to: taskArgs.contract,
-        data: data,
-      });
+      const transaction = await streamStorage.initialize(
+        "0xeD7B819cde5C9aE1BC529268e9aebb370bc5B84a"
+      );
+      transactionReceipt = await transaction.wait();
 
-      console.log(initializeTx);
-
-      const initializeTxHash = await initializeTx.wait(3);
-      console.log("Transaction Hash: " + initializeTxHash);
+      console.log("Transaction: " + JSON.stringify(transactionReceipt));
     } catch (error) {
+      console.log("ERror");
       console.log(error);
     }
-  });
+  }
+);

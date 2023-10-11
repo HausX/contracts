@@ -8,38 +8,24 @@ task("init-ticket-factory", "Initializes Ticket Factory").setAction(
     }
 
     try {
-      // const functionHash = ethers.utils.id("initialize(address)");
-      // console.log(functionHash.slice(0, 10));
-      // const data =
-      //   functionHash.slice(0, 10) +
-      //   ethers.utils.defaultAbiCoder
-      //     .encode(["string"], ["0xeD7B819cde5C9aE1BC529268e9aebb370bc5B84a"])
-      //     .slice(2);
-      // console.log(data);
-      // console.log("Sending Transaction");
-      // const initializeTx = await ethers.provider.sendTransaction({
-      //   from: "0x71B43a66324C7b80468F1eE676E7FCDaF63eB6Ac",
-      //   to: "0xbe2914199fa40bc4a66e8a69d77ad778a84fab2f",
-      //   data: data,
-      // });
       const wallet = new ethers.Wallet(
         network.config.accounts[0],
         ethers.provider
       );
-      const StreamStorage = await ethers.getContractFactory(
-        "StreamStorage",
+      const TicketFactory = await ethers.getContractFactory(
+        "TicketFactory",
         wallet
       );
-      const streamStorage = await StreamStorage.attach(
-        "0xbe2914199fa40bc4a66e8a69d77ad778a84fab2f"
+      const ticketFactory = await TicketFactory.attach(
+        "0xb65B773d773c7a7f2F378C71787Db7d7c32f687c"
       );
 
-      const transaction = await streamStorage.initialize(
+      const transaction = await ticketFactory.initialize(
         "0xeD7B819cde5C9aE1BC529268e9aebb370bc5B84a"
       );
       transactionReceipt = await transaction.wait();
 
-      console.log("Transaction: " + transactionReceipt);
+      console.log("Transaction: " + JSON.stringify(transactionReceipt));
     } catch (error) {
       console.log("ERror");
       console.log(error);
