@@ -4,9 +4,12 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
+interface ILiveTipping{
+    function ticketPurchaseDeposit(uint eventId)external payable;
+}
 contract TicketFactory is ERC1155URIStorage, Ownable {
     address public eventFactory;
+    ILiveTipping public liveTipping;
     uint private _ticketId;
 
     struct Event {
@@ -44,8 +47,10 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
         _;
     }
 
-    function initialize(address _eventFactory) public onlyOwner {
+    function initialize(address _eventFactory,ILiveTipping _liveTipping) public onlyOwner {
         eventFactory = _eventFactory;
+        liveTipping=_liveTipping;
+        
     }
 
     function createTicket(
@@ -66,9 +71,11 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
             events[eventId].currentSold < events[eventId].maxTickets,
             "sold out"
         );
+        liveTipping.ticketPurchaseDeposit{value: msg.value}(eventId);
         events[eventId].currentSold++;
         tickets[_ticketId] = Ticket(eventId, _ticketId++, user);
         _mint(user, eventId, 1, "");
+        emit TicketPurchased(eventId, _ticketId, msg.sender);
     }
 
     function _beforeTokenTransfer(

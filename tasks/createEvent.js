@@ -1,4 +1,4 @@
-const { networks } = require("../../networks");
+const { networks } = require("../networks");
 task("create-event", "Creates Event in the Event Factory").setAction(
   async (taskArgs, hre) => {
     if (network.name === "hardhat") {

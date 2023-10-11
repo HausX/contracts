@@ -1,12 +1,15 @@
 const { networks } = require("../../networks");
-task("init-ticket-factory", "Initializes Ticket Factory").setAction(
-  async (taskArgs, hre) => {
+task("init-ticket-factory", "Initializes Ticket Factory")
+  .addParam("contract", "Address of TicketFactory")
+  .addParam("eventfactory", "Address of EventFactory")
+  .addParam("livetipping", "Address of LiveTipping")
+  .setAction(async (taskArgs, hre) => {
     if (network.name === "hardhat") {
       throw Error(
         'This command cannot be used on a local development chain.  Specify a valid network or simulate an Functions request locally with "npx hardhat functions-simulate".'
       );
     }
-
+    const { contract, eventfactory, livetipping } = taskArgs;
     try {
       const wallet = new ethers.Wallet(
         network.config.accounts[0],
@@ -16,12 +19,11 @@ task("init-ticket-factory", "Initializes Ticket Factory").setAction(
         "TicketFactory",
         wallet
       );
-      const ticketFactory = await TicketFactory.attach(
-        "0xb65B773d773c7a7f2F378C71787Db7d7c32f687c"
-      );
+      const ticketFactory = await TicketFactory.attach(contract);
 
       const transaction = await ticketFactory.initialize(
-        "0xeD7B819cde5C9aE1BC529268e9aebb370bc5B84a"
+        eventfactory,
+        livetipping
       );
       transactionReceipt = await transaction.wait();
 
@@ -30,5 +32,4 @@ task("init-ticket-factory", "Initializes Ticket Factory").setAction(
       console.log("ERror");
       console.log(error);
     }
-  }
-);
+  });

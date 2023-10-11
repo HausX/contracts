@@ -14,6 +14,7 @@ interface IDistributor {
 
 contract LiveTipping is Ownable {
     address public eventFactoryContract;
+    address public ticketFactoryContract;
     IDistributor public distributorContract;
 
     struct Event {
@@ -28,6 +29,7 @@ contract LiveTipping is Ownable {
     }
 
     mapping(uint => Event) public events;
+    mapping(uint=>uint) public ticketPurchases;
     mapping(uint => mapping(address => uint)) public tipPerEvent;
 
     event LiveTippingCreated(
@@ -52,12 +54,20 @@ contract LiveTipping is Ownable {
         _;
     }
 
+    modifier onlyTicketFactory()
+    {
+        require(ticketFactoryContract!=address(0),"not initialized");
+        require(msg.sender==ticketFactoryContract,"Invalid sender");
+        _;
+    }
     function initialize(
         address _eventFactoryContract,
-        IDistributor _distributorContract
+        IDistributor _distributorContract,
+        address _ticketFactory
     ) public onlyOwner {
         eventFactoryContract = _eventFactoryContract;
         distributorContract = _distributorContract;
+        ticketFactoryContract=_ticketFactory;
     }
 
     function createLiveTipping(
@@ -96,6 +106,10 @@ contract LiveTipping is Ownable {
             emit Tipped(eventId, msg.sender, msg.value, true);
         }
         emit Tipped(eventId, msg.sender, msg.value, false);
+    }
+
+    function ticketPurchaseDeposit(uint eventId)external payable onlyTicketFactory{
+        ticketPurchases[eventId]+=msg.value;
     }
 
     function endEvent(uint eventId, address curator)

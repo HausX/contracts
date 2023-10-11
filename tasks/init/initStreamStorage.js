@@ -1,11 +1,14 @@
 const { networks } = require("../../networks");
-task("init-stream-storage", "Initializes Stream Storage").setAction(
-  async (taskArgs, hre) => {
+task("init-stream-storage", "Initializes Stream Storage")
+  .addParam("contract", "Address of LiveTipping")
+  .addParam("destination", "Address of Destination Address")
+  .setAction(async (taskArgs, hre) => {
     if (network.name === "hardhat") {
       throw Error(
         'This command cannot be used on a local development chain.  Specify a valid network or simulate an Functions request locally with "npx hardhat functions-simulate".'
       );
     }
+    const { contract, destination } = taskArgs;
 
     try {
       const wallet = new ethers.Wallet(
@@ -16,13 +19,9 @@ task("init-stream-storage", "Initializes Stream Storage").setAction(
         "StreamStorage",
         wallet
       );
-      const streamStorage = await StreamStorage.attach(
-        "0xbe2914199fa40bc4a66e8a69d77ad778a84fab2f"
-      );
+      const streamStorage = await StreamStorage.attach(contract);
 
-      const transaction = await streamStorage.initialize(
-        "0xeD7B819cde5C9aE1BC529268e9aebb370bc5B84a"
-      );
+      const transaction = await streamStorage.initialize(destination);
       transactionReceipt = await transaction.wait();
 
       console.log("Transaction: " + JSON.stringify(transactionReceipt));
@@ -30,5 +29,4 @@ task("init-stream-storage", "Initializes Stream Storage").setAction(
       console.log("ERror");
       console.log(error);
     }
-  }
-);
+  });
