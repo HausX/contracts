@@ -31,6 +31,7 @@ interface ILiveTipping {
     function endEvent(uint eventId, address curator) external returns (address);
 }
 
+
 contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
     ILiveTipping public immutable i_liveTippingContract;
     ITicketFactory public immutable i_ticketFactory;
@@ -114,19 +115,18 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
     }
 
     function createEvent(
-        uint startTime,
+        uint startTimeDelta,
         uint baseTip,
         uint maxTickets,
         uint ticketPrice,
         uint curatorCut,
         string memory metadata
     ) public {
-        require(startTime > block.timestamp, "Invalid start time");
         require(curatorCut <= 90, "Curator cut must be less than 90%");
         uint eventId = eventIdCounter++;
         events[eventId] = Event(
             msg.sender,
-            startTime,
+            block.timestamp+startTimeDelta,
             address(0),
             metadata,
             "",
@@ -141,13 +141,21 @@ contract EventFactory is ERC721, ERC721URIStorage, Ownable, AxelarExecutable {
         i_liveTippingContract.createLiveTipping(
             eventId,
             msg.sender,
-            startTime,
+            block.timestamp+startTimeDelta,
             baseTip,
             curatorCut
         );
         _mint(address(this), eventId);
         _setTokenURI(eventId, metadata);
-        emit EventCreated(eventId, msg.sender, startTime, metadata);
+        emit EventCreated(eventId, msg.sender, block.timestamp+startTimeDelta, metadata);
+    }
+
+    function getCurrentBlockTimestamp() public view returns (uint256) {
+        return block.timestamp;
+    }
+    
+    function getEventStartTime() public view returns (uint256) {
+        return events[eventIdCounter].startTime;
     }
 
     // The following functions are overrides required by Solidity.

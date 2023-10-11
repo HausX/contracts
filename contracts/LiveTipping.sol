@@ -12,6 +12,7 @@ interface IDistributor {
     ) external payable;
 }
 
+
 contract LiveTipping is Ownable {
     address public eventFactoryContract;
     address public ticketFactoryContract;
@@ -91,10 +92,10 @@ contract LiveTipping is Ownable {
     }
 
     function tipEvent(uint eventId) public payable {
-        require(
-            block.timestamp > events[eventId].startTime,
-            "Event has not started"
-        );
+        // require(
+        //     block.timestamp > events[eventId].startTime,
+        //     "Event has not started"
+        // );
         require(msg.value > events[eventId].baseTip, "Tip is too low");
         require(!events[eventId].isEventOver, "Event is over");
         tipPerEvent[eventId][msg.sender] += msg.value;

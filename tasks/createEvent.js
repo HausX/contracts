@@ -20,12 +20,12 @@ task("create-event", "Creates Event in the Event Factory")
       const eventFactory = await EventFactory.attach(taskArgs.contract);
 
       const transaction = await eventFactory.createEvent(
-        "1697014500",
-        "100000000000000",
-        "35",
-        "100000000000000",
-        "10",
-        "Sample metadata"
+        "16967014864",
+        "90000000000000",
+        "100",
+        "90000000000000",
+        "1",
+        "Hola Amigos! I am composing my own music!"
       );
       transactionReceipt = await transaction.wait();
 

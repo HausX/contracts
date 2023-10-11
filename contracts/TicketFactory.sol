@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 interface ILiveTipping{
     function ticketPurchaseDeposit(uint eventId)external payable;
 }
+
 contract TicketFactory is ERC1155URIStorage, Ownable {
     address public eventFactory;
     ILiveTipping public liveTipping;
@@ -66,7 +67,7 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
 
     function purchaseTicket(uint256 eventId, address user) public payable {
         require(balanceOf(user, eventId) == 0, "already purchased");
-        require(msg.value > events[eventId].ticketPrice, "insufficient funds");
+        require(msg.value >= events[eventId].ticketPrice, "insufficient funds");
         require(
             events[eventId].currentSold < events[eventId].maxTickets,
             "sold out"
