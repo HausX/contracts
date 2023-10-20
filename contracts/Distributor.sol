@@ -45,8 +45,11 @@ contract Distributor is Ownable {
         uint creatorAmount = (msg.value * (90 - curatorCut)) / 100;
         uint curatorAmount = (msg.value * curatorCut) / 100;
         uint daoAmount = (msg.value * 10) / 100;
+        bool success2;
+        if (curatorCut != 0) {
+            (success2, ) = curator.call{value: curatorAmount}("");
+        }
         (bool success1, ) = creator.call{value: creatorAmount}("");
-        (bool success2, ) = curator.call{value: curatorAmount}("");
         (bool success3, ) = dao.call{value: daoAmount}("");
         require(success1 && success2 && success3, "Transfer failed");
         emit FundsDistributed(

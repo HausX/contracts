@@ -28,8 +28,11 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
 
     mapping(uint256 => Event) public events;
     mapping(uint256 => Ticket) public tickets;
+    mapping(uint256=>mapping(address=>uint256)) public eventToTicketId;
 
-    constructor() ERC1155("") {}
+    constructor() ERC1155("") {
+        _ticketId=1;
+    }
 
     event TicketCreated(
         uint256 indexed eventId,
@@ -40,6 +43,13 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
         uint256 indexed eventId,
         uint256 indexed ticketId,
         address purchaser
+    );
+
+    event TicketTransferred(
+        uint256 indexed eventId,
+        uint256 indexed ticketId,
+        address from,
+        address to
     );
 
     modifier onlyEventFactory() {
@@ -74,8 +84,10 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
         );
         liveTipping.ticketPurchaseDeposit{value: msg.value}(eventId);
         events[eventId].currentSold++;
+        eventToTicketId[eventId][user]=_ticketId+1;
         tickets[_ticketId] = Ticket(eventId, _ticketId++, user);
         _mint(user, eventId, 1, "");
+
         emit TicketPurchased(eventId, _ticketId, msg.sender);
     }
 
@@ -89,8 +101,18 @@ contract TicketFactory is ERC1155URIStorage, Ownable {
     ) internal virtual override(ERC1155) {
         for (uint i = 0; i < ids.length; i++) {
             require(balanceOf(to, ids[i]) == 0, "ticket already owned");
+            if(from==address(0)){
+                continue;
+            }
+            uint256 eventId=ids[i];
+            uint256 ticketId=eventToTicketId[eventId][from];
+            eventToTicketId[eventId][to]=ticketId;
+            eventToTicketId[eventId][from]=0;
+            emit TicketTransferred(eventId,ticketId,from,to);
         }
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+      
+           
     }
 
     function uri(uint256 tokenId)

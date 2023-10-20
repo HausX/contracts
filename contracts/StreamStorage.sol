@@ -1,5 +1,5 @@
 
-
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
 
@@ -4584,6 +4584,12 @@ contract StreamStorage is AxelarExecutable {
         DealTerminated
     }
 
+    enum EventStatus{
+        NotExists,
+        Created,
+        Ended
+    }
+
     mapping(bytes32 => RequestIdx) public dealRequestIdx; // contract deal id -> deal index
     DealRequest[] public dealRequests;
 
@@ -4591,7 +4597,7 @@ contract StreamStorage is AxelarExecutable {
     mapping(bytes => ProviderSet) public pieceProviders; // commP -> provider
     mapping(bytes => uint64) public pieceDeals; // commP -> deal ID
     mapping(bytes => Status) public pieceStatus;
-    mapping(uint256 => bytes) public streamStorageState;
+    mapping(uint256=>EventStatus) public eventStatus;
 
     event ReceivedDataCap(string received);
     event DealProposalCreate(
@@ -4602,7 +4608,7 @@ contract StreamStorage is AxelarExecutable {
     );
 
     address public owner;
-    string public destinationAddress;
+    string public eventFactoryAddress;
     IAxelarGasService public immutable gasService;
 
     constructor(
@@ -4613,46 +4619,99 @@ contract StreamStorage is AxelarExecutable {
         owner = msg.sender;
     }
 
-    function initialize(string memory _destinationAddress) public {
+    function initialize(string memory _eventFactoryAddress) public {
         require(msg.sender == owner);
-        destinationAddress = _destinationAddress;
+        eventFactoryAddress = _eventFactoryAddress;
     }
 
-    function getProviderSet(bytes calldata cid)
-        public
-        view
-        returns (ProviderSet memory)
+    // function getProviderSet(bytes calldata cid)
+    //     public
+    //     view
+    //     returns (ProviderSet memory)
+    // {
+    //     return pieceProviders[cid];
+    // }
+
+    // function getProposalIdSet(bytes calldata cid)
+    //     public
+    //     view
+    //     returns (RequestId memory)
+    // {
+    //     return pieceRequests[cid];
+    // }
+
+    // function dealsLength() public view returns (uint256) {
+    //     return dealRequests.length;
+    // }
+
+    // function getDealByIndex(uint256 index)
+    //     public
+    //     view
+    //     returns (DealRequest memory)
+    // {
+    //     return dealRequests[index];
+    // }
+
+     function _execute(
+        string calldata sourceChain_,
+        string calldata sourceAddress_,
+        bytes calldata payload_
+    ) internal override {
+        require(
+            keccak256(bytes(sourceChain_)) == keccak256(bytes("polygon-zkevm")),
+            "invalid chain"
+        );
+        require(
+            keccak256(bytes(sourceAddress_)) ==
+                keccak256(bytes(eventFactoryAddress)),
+            "invalid address"
+        );
+        
+        (uint256 eventId,DealRequest memory deal) = abi
+            .decode(payload_, (uint256, DealRequest));
+
+        require(eventStatus[eventId] == EventStatus.NotExists, "event exists");
+        _createEvent(deal);
+        eventStatus[eventId] = EventStatus.Created;
+
+    }
+
+    function _createEvent(DealRequest memory deal) private 
     {
-        return pieceProviders[cid];
+        _makeDealProposal(deal);
     }
 
-    function getProposalIdSet(bytes calldata cid)
-        public
-        view
-        returns (RequestId memory)
-    {
-        return pieceRequests[cid];
+
+    function endEvent(uint256 eventId,DealRequest memory deal) public payable
+    { 
+        require(eventStatus[eventId] == EventStatus.Created, "event not created or ended");
+        _makeDealProposal(deal);
+
+        require(msg.value > 0, "no CC gas");
+        require(bytes(eventFactoryAddress).length>0, "not initialized");
+
+         bytes memory payload = abi.encode(
+            eventId,
+            deal.piece_cid,
+            deal.extra_params.location_ref
+        );
+
+        gasService.payNativeGasForContractCall{value: msg.value}(
+            address(this),
+            "polygon-zkevm",
+            eventFactoryAddress,
+            payload,
+            msg.sender
+        );
+        gateway.callContract("polygon-zkevm", eventFactoryAddress, payload);
+
     }
 
-    function dealsLength() public view returns (uint256) {
-        return dealRequests.length;
-    }
-
-    function getDealByIndex(uint256 index)
-        public
-        view
-        returns (DealRequest memory)
-    {
-        return dealRequests[index];
-    }
-
-    function makeDealProposal(uint256 eventId, DealRequest calldata deal)
-        public
-        payable
+    function _makeDealProposal(DealRequest memory deal)
+        private
         returns (bytes32)
     {
         require(msg.sender == owner);
-        require(bytes(destinationAddress).length>0, "not initialized");
         if (
             pieceStatus[deal.piece_cid] == Status.DealPublished ||
             pieceStatus[deal.piece_cid] == Status.DealActivated
@@ -4664,29 +4723,14 @@ contract StreamStorage is AxelarExecutable {
         dealRequests.push(deal);
 
         // creates a unique ID for the deal proposal -- there are many ways to do this
-        bytes32 id = bytes32(eventId);
+        bytes32 id = keccak256(
+                abi.encodePacked(block.timestamp, msg.sender, index)
+        );
         dealRequestIdx[id] = RequestIdx(index, true);
 
         pieceRequests[deal.piece_cid] = RequestId(id, true);
         pieceStatus[deal.piece_cid] = Status.RequestSubmitted;
-        streamStorageState[eventId] = deal.piece_cid;
         // writes the proposal metadata to the event log
-
-        require(msg.value > 0, "CC gas required");
-
-        bytes memory payload = abi.encode(
-            eventId,
-            deal.piece_cid,
-            deal.extra_params.location_ref
-        );
-        gasService.payNativeGasForContractCall{value: msg.value}(
-            address(this),
-            "polygon-zkevm",
-            destinationAddress,
-            payload,
-            msg.sender
-        );
-        gateway.callContract("polygon-zkevm", destinationAddress, payload);
 
         emit DealProposalCreate(
             id,
@@ -4892,7 +4936,7 @@ contract StreamStorage is AxelarExecutable {
         return withdrawBalanceAmount;
     }
 
-    function receiveDataCap(bytes memory params) internal {
+    function receiveDataCap(bytes memory ) internal {
         require(
             msg.sender == DATACAP_ACTOR_ETH_ADDRESS,
             "msg.sender != f07"
