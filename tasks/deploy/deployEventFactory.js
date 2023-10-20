@@ -23,12 +23,10 @@ task("deploy-event-factory", "Deploys EventFactory contract")
       networks[network.name].AXELAR_GAS_SERVICE
     );
     console.log(
-      `\nWaiting 3 blocks for transaction ${eventFactoryContract.deployTransaction.hash} to be confirmed...`
+      `\nWaiting 1 blocks for transaction ${eventFactoryContract.deployTransaction.hash} to be confirmed...`
     );
 
-    await eventFactoryContract.deployTransaction.wait(
-      networks[network.name].WAIT_BLOCK_CONFIRMATIONS
-    );
+    await eventFactoryContract.deployTransaction.wait(1);
     console.log("\nVerifying contract...");
     try {
       await run("verify:verify", {

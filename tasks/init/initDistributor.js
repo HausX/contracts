@@ -1,7 +1,7 @@
 const { networks } = require("../../networks");
 task("init-distributor", "Initializes Distributor")
-  .addParam("contract", "Address of LiveTipping")
-  .addParam("dao", "Address of EventFactory")
+  .addParam("contract", "Address of Distributor")
+  .addParam("dao", "Address of DAO (owner)")
   .addParam("livetipping", "Address of LiveTipping")
   .setAction(async (taskArgs, hre) => {
     if (network.name === "hardhat") {

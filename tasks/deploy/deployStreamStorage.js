@@ -19,10 +19,15 @@ task("deploy-stream-storage", "Deploys StreamStorage contract").setAction(
       `\nWaiting 3 blocks for transaction ${streamStorageContract.deployTransaction.hash} to be confirmed...`
     );
 
-    await streamStorageContract.deployTransaction.wait(
-      networks[network.name].WAIT_BLOCK_CONFIRMATIONS
+    await streamStorageContract.deployTransaction.wait(1);
+
+    console.log(
+      `StreamStorage deployed to ${streamStorageContract.address} on ${network.name}`
     );
-    console.log("\nVerifying contract...");
+    console.log(
+      "\nUse CLI Command to verify contract:\n npx hardhat starboard-verify StreamStorage " +
+        streamStorageContract.address
+    );
     try {
       await run("verify:verify", {
         address: streamStorageContract.address,
@@ -42,8 +47,5 @@ task("deploy-stream-storage", "Deploys StreamStorage contract").setAction(
         console.log("Contract already verified");
       }
     }
-    console.log(
-      `StreamStorage deployed to ${streamStorageContract.address} on ${network.name}`
-    );
   }
 );
